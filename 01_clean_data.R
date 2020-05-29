@@ -7,11 +7,11 @@ library(plyr)
 library(googlesheets)
 library(data.table)
 
-setwd("Z:/AMR/Pathogens/typhi_paratyphi/model_prep")
+setwd("D:/Z_drive/typhi_paratyphi/model_prep")
 
 #Load required functions
-source("H:/Functions/cbindfill.R")
-source("H:/Functions/round2.R")
+source("D:/H_drive/Functions/cbindfill.R")
+source("D:/H_drive/Functions/round2.R")
 
 #Load in data from googlesheets
 master.data <-gs_read(ss = gs_title("Prevalence data - Typhi & Paratyphi"), ws = "data")
@@ -37,6 +37,7 @@ rm(duplicate.isolates)
 # mydata$source_id[mydata$row_id>=15893 & mydata$row_id <=15906] <- 9998
 # mydata$source_id[mydata$row_id>=15907 & mydata$row_id <=16032] <- 9997
 mydata <- mydata[mydata$source_id!=1870,]
+mydata <- mydata[mydata$source_id!=433,]
 
 #redefine row_id so is definitly unique
 mydata$row_id <- seq(1,length(mydata$row_id),1)
@@ -320,6 +321,6 @@ mydata$mid_year[mydata$source_id == 455 & mydata$antimicrobial == 'multi-drug'] 
 saveRDS(mydata, "clean_data/step1_cleaning.rds")
 included_studies <- unique(mydata$source_id)
 #add 1870 back into this list as it is included but we know have an extended dataset for it (essentially replacing the details)
-included_studies <- c(included_studies , 1870)
+included_studies <- c(included_studies , 1870, 433)
 write.csv(included_studies, 'clean_data/included_studies.csv', row.names = F)
 

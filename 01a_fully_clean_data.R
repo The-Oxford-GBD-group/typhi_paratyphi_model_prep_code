@@ -10,7 +10,7 @@ library(raster)
 library(data.table)
 library(readxl)
 
-setwd("Z:/AMR/Pathogens/typhi_paratyphi/model_prep")
+setwd("D:/Z_drive//typhi_paratyphi/model_prep")
 
 master_data <- readRDS('clean_data/step1_cleaning.rds')
 facilities <-gs_read(ss = gs_title("Prevalence data - Typhi & Paratyphi"), ws = "facility lookup")
@@ -31,8 +31,8 @@ facilities <- facilities[c("facility_name",
                            "lat",
                            "long")]
 
-adm1 <- read.dbf('Z:/AMR/Shapefiles/admin2013_1.dbf')
-adm2 <- read.dbf('Z:/AMR/Shapefiles/admin2013_2.dbf')
+adm1 <- read.dbf('D:/Z_drive/Shapefiles/admin2013_1.dbf')
+adm2 <- read.dbf('D:/Z_drive/Shapefiles/admin2013_2.dbf')
 adm2_shp <- shapefile('C:/Users/annieb/Desktop/admin2013_2.shp')
 
 #1. For the hospitals
@@ -343,7 +343,7 @@ mydata$final_adm2_name <-  unlist(mydata$final_adm2_name)
 
 #limit to required variables
 names(mydata)
-saveRDS(mydata, 'Z:/AMR/Pathogens/typhi_paratyphi/model_prep/clean_data/cleaned_locations.RDS')
+saveRDS(mydata, 'clean_data/cleaned_locations.RDS')
 
 locs_by_row <- mydata[c("row_id",
                        "source_id",
@@ -366,7 +366,7 @@ locs_by_row <- mydata[c("row_id",
                        "final_lat",
                        "final_long")]
 
-write.csv(locs_by_row, 'Z:/AMR/Pathogens/typhi_paratyphi/model_prep/clean_data/locations/locations_by_row.csv', row.names = F, na = "")
+write.csv(locs_by_row, 'clean_data/locations/locations_by_row.csv', row.names = F, na = "")
 
 locs_study_site <- unique(mydata[c("source_id",
                                   "best_geo",
@@ -390,7 +390,7 @@ locs_study_site <- unique(mydata[c("source_id",
 # locs_study_site <-  data.table(locs_study_site)
 # locs_study_site$dups <- duplicated(locs_study_site, by = c('source_id', 'site_name', 'geometry_type'))
 # table(locs_study_site$dups)
-write.csv(locs_study_site, 'Z:/AMR/Pathogens/typhi_paratyphi/model_prep/clean_data/locations/locations_by_study_site.csv', row.names = F, na = "")
+write.csv(locs_study_site, 'clean_data/locations/locations_by_study_site.csv', row.names = F, na = "")
 
 rm(adm1, adm2, adm2_shp, locs_study_site, locs_by_row, matched.data, national_data, temp_data, facilities)
 
@@ -431,7 +431,7 @@ table(mydata$child_adult)
 mydata$percent_male <- gsub("[^0-9\\.]", "", mydata$percent_male) 
 
 #attach the notes for demographics
-notes <- read.csv('Z:/AMR/Pathogens/typhi_paratyphi/model_prep/clean_data/demographics/studies_demographics_notes.csv', stringsAsFactors = F)
+notes <- read.csv('clean_data/demographics/studies_demographics_notes.csv', stringsAsFactors = F)
 notes <- notes[c(1, 4)]
 mydata <- merge(mydata, notes, by = 'source_id', all.x = T)
 
@@ -548,10 +548,10 @@ demographics_per_row <- mydata[c("row_id",
                                  "demographics_notes")]
 
 #save the demographics datasets
-write.csv(demographics_per_row, 'Z:/AMR/Pathogens/typhi_paratyphi/model_prep/clean_data/demographics/demographics_per_row.csv', row.names = F, na = "")
-write.csv(all_demographics, 'Z:/AMR/Pathogens/typhi_paratyphi/model_prep/clean_data/demographics/demographics_by_study_site_serotype.csv', row.names = F, na = "")
-write.csv(combined_t_pt, 'Z:/AMR/Pathogens/typhi_paratyphi/model_prep/clean_data/demographics/demographics_by_study_site.csv', row.names = F, na = "")
-write.csv(all_demogs, 'Z:/AMR/Pathogens/typhi_paratyphi/model_prep/clean_data/demographics/demographics_by_study.csv', row.names = F, na = "")
+write.csv(demographics_per_row, 'clean_data/demographics/demographics_per_row.csv', row.names = F, na = "")
+write.csv(all_demographics, 'clean_data/demographics/demographics_by_study_site_serotype.csv', row.names = F, na = "")
+write.csv(combined_t_pt, 'clean_data/demographics/demographics_by_study_site.csv', row.names = F, na = "")
+write.csv(all_demogs, 'clean_data/demographics/demographics_by_study.csv', row.names = F, na = "")
 
 rm(demographics_per_row, all_demographics, combined_t_pt, notes, temp_data, all_demogs, aggregated_demographics)
 
@@ -970,12 +970,12 @@ testing_info_study_site$control_strain[testing_info_study_site$control_strain ==
 testing_info_study_site$isolate_source[testing_info_study_site$isolate_source == 'Unknown'] <-  'Not specified'
 testing_info_study_site$N_cultures[is.na(testing_info_study_site$N_cultures)] <-  'Not specified'
 
-write.csv(testing_info_study, 'Z:/AMR/Pathogens/typhi_paratyphi/model_prep/clean_data/testing_info/testing_info_by_study.csv', row.names = F, na = "")
-write.csv(testing_info_study_site, 'Z:/AMR/Pathogens/typhi_paratyphi/model_prep/clean_data/testing_info/testing_info_by_study_site.csv', row.names = F, na = "")
+write.csv(testing_info_study, 'clean_data/testing_info/testing_info_by_study.csv', row.names = F, na = "")
+write.csv(testing_info_study_site, 'clean_data/testing_info/testing_info_by_study_site.csv', row.names = F, na = "")
 
 #get the testing info per row
 testing_info_per_row <- mydata[,.(row_id, isolate_source, amr_test, resistance_breakpoints, control_strain, ISO_accredited, QA)]
-write.csv(testing_info_per_row, 'Z:/AMR/Pathogens/typhi_paratyphi/model_prep/clean_data/testing_info/testing_info_per_row.csv', row.names = F, na = "")
+write.csv(testing_info_per_row, 'clean_data/testing_info/testing_info_per_row.csv', row.names = F, na = "")
 
 
 rm(testing_info_per_row, testing_info_study, testing_info_study_site, 
@@ -1040,18 +1040,18 @@ colnames(mydata)[colnames(mydata) == 'species'] <- 'serotype'
 colnames(mydata)[colnames(mydata) == 'no_examined'] <- 'sample_size'
 colnames(mydata) <- gsub('final_', '', colnames(mydata))
 
-saveRDS(mydata, 'Z:/AMR/Pathogens/typhi_paratyphi/model_prep/clean_data/step2_cleaning.rds')
+saveRDS(mydata, 'clean_data/step2_cleaning.rds')
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # Get the study information ####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 study_info <- unique(mydata, by = c('source_id', 'study_type'))
 study_info <- study_info <- study_info[,.(source_id, study_type)]
-citations <- read_excel('Z:/AMR/Pathogens/typhi_paratyphi/model_prep/clean_data/study_info/citations.xlsx')
+citations <- read_excel('clean_data/study_info/citations.xlsx')
 study_info <-  merge(study_info, citations, all.x = T)
 
 study_info$publication_year <- as.numeric(unlist(lapply(study_info$author_year, function(x){strsplit(x, '[()]')[[1]][2]})))
-write.csv(study_info, 'Z:/AMR/Pathogens/typhi_paratyphi/model_prep/clean_data/study_info/study_info.csv', row.names = F)
+write.csv(study_info, 'clean_data/study_info/study_info.csv', row.names = F)
 
 rm(citations)
 
