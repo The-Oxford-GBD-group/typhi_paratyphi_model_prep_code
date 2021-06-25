@@ -5,16 +5,34 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 rm(list =ls())
 library(foreign)
-library(googlesheets)
+library(googlesheets4)
 library(raster)
 library(data.table)
 library(readxl)
 
-setwd("D:/Z_drive//typhi_paratyphi/model_prep")
+setwd("Z:/AMR/Pathogens/typhi_paratyphi/model_prep")
 
 master_data <- readRDS('clean_data/step1_cleaning.rds')
-facilities <-gs_read(ss = gs_title("Prevalence data - Typhi & Paratyphi"), ws = "facility lookup")
-facilities <- data.frame(facilities)
+
+# fix the lists in the master data (messed up from you googlesheets function)
+master_data$lower_age <- gsub('NULL', '999', master_data$lower_age) 
+master_data$lower_age <-  gsub('999', NA, master_data$lower_age)
+master_data$upper_age <- gsub('NULL', '999', master_data$upper_age) 
+master_data$upper_age <-  gsub('999', NA, master_data$upper_age)
+master_data$mean_age <- gsub('NULL', '999', master_data$mean_age) 
+master_data$mean_age <-  gsub('999', NA, master_data$mean_age)
+master_data$percent_male <- gsub('NULL', '999', master_data$percent_male) 
+master_data$percent_male <-  gsub('999', NA, master_data$percent_male)
+master_data$cultures_performed <- gsub('NULL', '-999', master_data$cultures_performed) 
+master_data$cultures_performed <-  gsub('-999', NA, master_data$cultures_performed)
+
+facilities <- read_sheet("https://docs.google.com/spreadsheets/d/109tfx8GOnephsbQf8PSrAtpa7vJQTfXIjKZRsFxYwGo/edit#gid=0", sheet = "facility lookup")
+facilities$GAUL_ADM1 <- unlist(facilities$GAUL_ADM1)
+facilities$lat <-  gsub('NULL', '999', facilities$lat)
+facilities$lat <-  gsub('999', NA, facilities$lat)
+facilities$lat <- as.numeric(facilities$lat)
+# facilities <-gs_read(ss = gs_title("Prevalence data - Typhi & Paratyphi"), ws = "facility lookup")
+# facilities <- data.frame(facilities)
 
 #1. Seperate out community data ####
 table(master_data$geometry_type)
@@ -23,7 +41,7 @@ matched.data <- master_data[!is.na(master_data$latitude)| !is.na(master_data$gau
 matched.data <-  matched.data[matched.data$geometry_type != 'national',]
 national_data <- master_data[master_data$geometry_type == 'national',]
 mydata <- master_data[which(is.na(master_data$latitude) & is.na(master_data$gaul_code) & master_data$geometry_type!='national'),]
-  
+
 #get the location infomation for the hosptials
 facilities <- facilities[c("facility_name",
                            "GAUL_ADM2",
@@ -31,9 +49,9 @@ facilities <- facilities[c("facility_name",
                            "lat",
                            "long")]
 
-adm1 <- read.dbf('D:/Z_drive/Shapefiles/admin2013_1.dbf')
+adm1 <- read.dbf('D:/Z_drive//Shapefiles/admin2013_1.dbf')
 adm2 <- read.dbf('D:/Z_drive/Shapefiles/admin2013_2.dbf')
-adm2_shp <- shapefile('C:/Users/annieb/Desktop/admin2013_2.shp')
+adm2_shp <- shapefile('D:/Z_drive/Shapefiles/admin2013_2.shp')
 
 #1. For the hospitals
 #a. merge the locations onto each of the hosptitals
@@ -458,6 +476,11 @@ temp_data$mean_age[temp_data$source_id == 5136] <-  15.38
 temp_data$mean_age[temp_data$source_id == 5137] <-  21.79
 temp_data$mean_age[temp_data$source_id == 5134] <-  NA
 temp_data$inpatients_outpatients[temp_data$source_id == 4370] <- 'Inpatients'
+temp_data$mean_age[temp_data$source_id == 5148] <-  NA #(Find this out from the raw dataset later)
+temp_data$child_adult[temp_data$source_id == 5148] <- 'No specified age restrictions/Adults and children'
+temp_data$inpatients_outpatients[temp_data$source_id == 5146] <- 'Inpatients & Outpatients'
+
+
 
 aggregated_demographics <- unique(temp_data[,.(source_id,
                                               location_name,
@@ -525,6 +548,7 @@ aggregated_demographics$child_adult[aggregated_demographics$source_id == 4370] <
 aggregated_demographics$mean_age[aggregated_demographics$source_id == 4370] <-  NA
 aggregated_demographics$child_adult[aggregated_demographics$source_id == 2180] <-  'No specified age restrictions/Adults and children'
 aggregated_demographics$mean_age[aggregated_demographics$source_id == 2180] <-  NA
+aggregated_demographics$mean_age[aggregated_demographics$source_id == 2946] <-  NA
 
 all_demogs <- aggregated_demographics[, .(age_range = paste(min(lower_age), max(upper_age), sep = "-"),
                                           percent_male = round(sum(number_male)/sum(no_examined)*100,0)),
@@ -839,7 +863,7 @@ guidelines$resistance_breakpoints[guidelines$source_id == 5064] <- 'Pre 2012 CLS
 guidelines$resistance_breakpoints[guidelines$source_id == 5079] <- 'CLSI 2016; for ciprofloxacin R \u2265 0.5 \u03BCg/ml'
 guidelines$resistance_breakpoints[guidelines$source_id == 5110] <- 'CLSI 2012-2014; Pre 2012 interepreded using CLSI 2011; for azithrmoycin R \u2265 16 \u03BCg/ml'
 guidelines$resistance_breakpoints[guidelines$source_id == 5124] <- 'CLSI 2012; CLSI (no year stated) for data pre 2012; for azithrmoycin R > 16 \u03BCg/ml'
-
+guidelines$resistance_breakpoints[guidelines$source_id == 5148] <- 'CLSI 2000-2018'
 
 guidelines_study <- unique(guidelines, by = c('source_id', 'resistance_breakpoints'))
 guidelines_study <- guidelines_study[order(guidelines_study$source_id, guidelines_study$resistance_breakpoints),]
@@ -883,7 +907,8 @@ control_strain_study <- unique(control_strain[,.(source_id, control_strain)])
 #~~~~~~~~~~~~~~~~~~~~~~~~~#
 # 5. ISO accreditation ####
 #~~~~~~~~~~~~~~~~~~~~~~~~~#
-facilities <-gs_read(ss = gs_title("Prevalence data - Typhi & Paratyphi"), ws = "facility lookup")
+facilities <- read_sheet("https://docs.google.com/spreadsheets/d/109tfx8GOnephsbQf8PSrAtpa7vJQTfXIjKZRsFxYwGo/edit#gid=0", sheet = "facility lookup")
+
 accredited <- facilities$facility_name[grep('YES', facilities$`ISO accreditation`)]
 
 mydata$ISO_accredited <-  'No'
@@ -1045,8 +1070,9 @@ saveRDS(mydata, 'clean_data/step2_cleaning.rds')
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # Get the study information ####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+mydata$study_type[mydata$source_id == 848] <- 'Prospective & retrospective'
 study_info <- unique(mydata, by = c('source_id', 'study_type'))
-study_info <- study_info <- study_info[,.(source_id, study_type)]
+study_info <- study_info[,.(source_id, study_type)]
 citations <- read_excel('clean_data/study_info/citations.xlsx')
 study_info <-  merge(study_info, citations, all.x = T)
 

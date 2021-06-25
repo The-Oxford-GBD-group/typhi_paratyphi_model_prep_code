@@ -2,7 +2,8 @@
 # Calculate MDR for those without AMR            ####
 # If  2/3 of AMP, CHL SXT use the minimum resistant #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-
+library(data.table)
+library(ggplot2)
 rm(list = ls())
 
 setwd("Z:/AMR/Pathogens/typhi_paratyphi/model_prep")
@@ -52,8 +53,17 @@ res <- mydata[,.(percentage_resistant_chloramphenicol, percentage_resistant_ampi
 
 mydata$inferred_mdr <- apply(res, 1, FUN=min, na.rm = T)
 
-plot(mydata$percentage_resistant_MDR, mydata$inferred_mdr)
-cor(mydata$percentage_resistant_MDR[!is.na(mydata$percentage_resistant_MDR)], mydata$inferred_mdr[!is.na(mydata$percentage_resistant_MDR)])
+png('infered_MDR_check.png', height = 10, width = 10, units = 'cm', res = 300)
+ggplot(mydata)+
+  geom_point(aes(x = percentage_resistant_MDR, y = inferred_mdr))+
+  xlim(0,100)+
+  ylim(0,100)+
+  xlab('True MDR')+
+  ylab('Infered MDR')+
+  theme_bw()
+dev.off()
+
+cor(mydata$percentage_resistant_MDR[!is.na(mydata$percentage_resistant_MDR)], mydata$inferred_mdr[!is.na(mydata$percentage_resistant_MDR)])^2
 
 #check data points where the inferred value is higher than the actual MDR (allow 5% error)
 check <- mydata[mydata$inferred_mdr+5<mydata$percentage_resistant_MDR]

@@ -4,18 +4,18 @@
 rm(list = ls())
 library(doBy)
 library(plyr)
-library(googlesheets)
+library(googlesheets4)
 library(data.table)
 
-setwd("D:/Z_drive/typhi_paratyphi/model_prep")
+setwd("Z:/AMR/Pathogens/typhi_paratyphi/model_prep")
 
 #Load required functions
-source("D:/H_drive/Functions/cbindfill.R")
-source("D:/H_drive/Functions/round2.R")
+source("H:/Functions/cbindfill.R")
+source("H:/Functions/round2.R")
 
 #Load in data from googlesheets
-master.data <-gs_read(ss = gs_title("Prevalence data - Typhi & Paratyphi"), ws = "data")
-
+# master.data <-gs_read(ss = gs_title("Prevalence data - Typhi & Paratyphi"), ws = "data")
+master.data <- read_sheet("https://docs.google.com/spreadsheets/d/109tfx8GOnephsbQf8PSrAtpa7vJQTfXIjKZRsFxYwGo/edit#gid=0", sheet = 'data')
 mydata <- master.data
 
 #change variable names to lowercase
@@ -26,7 +26,8 @@ names(mydata) <- tolower(names(mydata))
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 #remove the duplicates isolates
-duplicate.isolates <- gs_read(ss = gs_title("Tracking sheet"), ws = "Duplicated review isolates")
+# duplicate.isolates <- gs_read(ss = gs_title("Tracking sheet"), ws = "Duplicated review isolates")
+duplicate.isolates <- read_sheet("https://docs.google.com/spreadsheets/d/1cLQ1sNf74_9uW9EIR5sJFD8ypbUDKCePZ3vpjTHJFEA/edit#gid=208085225", sheet = 'Duplicated review isolates')
 #surveillance.reports <- gs_read(ss = gs_title("Tracking sheet"), ws = "Surveillance reports")
 
 mydata <- mydata[!(mydata$row_id%in%duplicate.isolates$row_id),]
@@ -38,6 +39,8 @@ rm(duplicate.isolates)
 # mydata$source_id[mydata$row_id>=15907 & mydata$row_id <=16032] <- 9997
 mydata <- mydata[mydata$source_id!=1870,]
 mydata <- mydata[mydata$source_id!=433,]
+
+mydata <- mydata[mydata$source_id!=2823,] # another duplicated study
 
 #redefine row_id so is definitly unique
 mydata$row_id <- seq(1,length(mydata$row_id),1)
@@ -196,7 +199,7 @@ mydata$antimicrobial[mydata$antimicrobial=="multi-drug & tetracycline & streptom
 
 mydata <- mydata[which(mydata$mid_year>=1990),]
 
-# mydata <- mydata[mydata$no_examined>=10,] #do this later
+mydata <- mydata[mydata$no_examined>=5,] #do this later
 
 mydata <- mydata[mydata$species=="Typhi" |
                    mydata$species=="Paratyphi",]
@@ -306,8 +309,9 @@ if(length(data.checks$dodgey_percentages)>0 | length(data.checks$dodgey_numbers)
 #~~~~~~~~~~~~~~~~~~~~~#
 # Any data exclusions #
 #~~~~~~~~~~~~~~~~~~~~~#
-mydata <- mydata[!(mydata$antimicrobial == 'multi-drug' & mydata$source_id == 2093),]  # The MDR values in this paper un unrealistically low compared to the AMP/CHL/CoT values
-mydata <- mydata[!(mydata$antimicrobial == 'multi-drug' & mydata$source_id == 4650),]  # The MDR values in this paper un unrealistically low compared to the AMP/CHL/CoT values and some are higher
+mydata <- mydata[which(!(mydata$antimicrobial == 'multi-drug' & mydata$source_id == 2093)),]  # The MDR values in this paper un unrealistically low compared to the AMP/CHL/CoT values
+mydata <- mydata[which(!(mydata$antimicrobial == 'multi-drug' & mydata$source_id == 4650)),]  # The MDR values in this paper un unrealistically low compared to the AMP/CHL/CoT values and some are higher
+mydata <- mydata[which(mydata$source_id != 4651),]  # outbreak, appears unrepresentative, remove
 
 #change the mid year for this study as has records from 04-04 for 1996-1999 and 04-10 for 2000 meaning there are 2 records with miod year == 2000
 # as these studies start in the first half of the mid-year the mid year should = start year not end year.
