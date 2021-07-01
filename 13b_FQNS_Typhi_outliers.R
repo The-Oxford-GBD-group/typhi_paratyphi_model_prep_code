@@ -10,15 +10,16 @@ library(ggforce)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # Identify outliers in datasets using MAD and DDoutlier methods ####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+setwd('C:/Users/Annie/Documents/GRAM/typhi_paratyphi')
 #read in data
-mydata <- fread('Z:/AMR/Pathogens/typhi_paratyphi/model_prep/clean_data/FQNS_typhi_clean.csv')
+mydata <- fread('model_prep/clean_data/FQNS_typhi_clean.csv')
 #change this Iraq data point as the cipro is unfeasibly low and nalidixic acid much higher - dont think they used correct breakpoints
 mydata$number_resistant[mydata$nid == 3022] <- 20
 mydata$val[mydata$nid == 3022] <- 0.5128
 mydata$variance[mydata$nid == 3022] <- 0.0064
 
 #match to national level covariates
-covs <- read.csv('Z:/AMR/Pathogens/typhi_paratyphi/covariates/cleaned_covs.csv')
+covs <- read.csv('covariates/cleaned_covs.csv')
 
 covs <- covs[names(covs) %in% c('location_id', 'year_id', 
                                 'cv_ldi_pc', 'cv_pollution_outdoor_pm25','cv_tfr',
@@ -48,7 +49,7 @@ model1 <- glmer(response ~ 1 + year +
 summary(model1)
 
 #predict out to all endmic locations
-locs <- read.dbf('Z:/AMR/Shapefiles/typhi_endemic.dbf')
+locs <- read.dbf('C:/users/Annie/Documents/GRAM/shapefiles/typhi_endemic.dbf')
 locs <- locs[c('loc_id', 'spr_reg_id', 'region_id', 'ihme_lc_id')]
 locs[1:4] <- sapply(locs[1:4], as.character)
 locs[1:3] <- sapply(locs[1:3], as.numeric)
@@ -91,7 +92,7 @@ covs$upper_bound[covs$upper_bound>1] <- 1
 covs$lower_bound[covs$lower_bound<0] <- 0
 
 covs <- covs[!is.na(covs$super_region),]
-pdf(paste0('Z:/AMR/Pathogens/typhi_paratyphi/model_prep/outliering/FQNS_typhi/MAD2_year.pdf'),
+pdf(paste0('model_prep/outliering/FQNS_typhi/MAD2_year.pdf'),
     height = 17,
     width = 12) 
 
@@ -167,7 +168,7 @@ mydata$outliers[mydata$dd_outlier==1 & mydata$is_outlier==1] <- 'Both'
 
 mydata$outliers <- factor(mydata$outliers, levels = c('None', 'DD_outlier', 'MAD_outlier', 'Both'))
 
-pdf('Z:/AMR/Pathogens/typhi_paratyphi/model_prep/outliering/FQNS_Typhi/DD_over2.pdf',
+pdf('model_prep/outliering/FQNS_Typhi/DD_over2.pdf',
     height = 8.3, width = 11.7)
 #plot out a page for each region
 for(i in 1:length(unique(mydata$super_region))){

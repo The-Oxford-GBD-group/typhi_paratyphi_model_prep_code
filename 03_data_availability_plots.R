@@ -4,9 +4,9 @@
 library(ggplot2)
 rm(list = ls())
 
-setwd("Z:/AMR/Pathogens/typhi_paratyphi/model_prep//")
+setwd("C:/Users/Annie/Documents/GRAM/typhi_paratyphi/model_prep//")
 
-drugbug <- c('MDR_typhi', 'MDR_paratyphi', 'FQNS_typhi', 'FQNS_paratyphi', 'all_studies')
+drugbug <- c('MDR_typhi', 'MDR_paratyphi', 'FQNS_typhi', 'FQNS_paratyphi', 'ceph_typhi', 'ceph_paratyphi', 'all_studies')
 
 for(db in drugbug){
 #read in cleaned csv
@@ -22,7 +22,7 @@ mydata$country[mydata$country=="Democratic Republic of the Congo"] <- "DRC"
 mydata$country[mydata$country=="Malawi Mozambique border"] <- "Malawi/Mozambique"
 
 #exclude africa from paratyphi
-if(db == 'MDR_paratyphi' | db == 'FQNS_paratyphi'){
+if(db == 'MDR_paratyphi' | db == 'FQNS_paratyphi'| db == 'ceph_paratyphi'){
         mydata <- mydata[mydata$super_region!='Sub-Saharan Africa',]
 }
 

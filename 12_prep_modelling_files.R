@@ -5,23 +5,23 @@ rm(list = ls())
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # Clean up data for use in national STGPR, subnational STGPR, subnational ST-CAR ####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-
+setwd('C:/Users/Annie/Documents/GRAM/typhi_paratyphi')
 #read in the location files
-locs <- read.dbf('Z:/AMR/Shapefiles/GBD2019/GBD2019_analysis_final.dbf')
+locs <- read.dbf('C:/Users/Annie/Documents/GRAM/shapefiles/GBD2019_analysis_final.dbf')
 locs <- locs[c('loc_id', "ihme_lc_id")]
 
-adm1_lookup <- fread("Z:/AMR/Pathogens/typhi_paratyphi/model_prep/clean_data/adm1_GBD_lookup2.csv")
+adm1_lookup <- fread("model_prep/clean_data/adm1_GBD_lookup2.csv")
 KEN_ad1 <- adm1_lookup[iso3=='KEN',.(adm2, location_id)]  
 adm1_lookup <- adm1_lookup[iso3!='KEN',.(adm1, location_id)]
 
-adm1_ids <- fread("Z:/AMR/Covariates/modelling_covariates/admin1_typhi/all_admin1_typhi_covs.csv")
+adm1_ids <- fread("covariates/all_admin1_typhi_covs.csv")
 adm1_ids <- adm1_ids[,.(admin_code, adj_id, adj_id_sSA, adj_id_Asia)]
 adm1_ids <- unique(adm1_ids)
 
 #Merge on the locations for each dataset and clean up required variables 
-for(db in c('MDR_typhi', 'MDR_paratyphi', 'FQNS_typhi', 'FQNS_paratyphi')){
+for(db in c('MDR_typhi', 'MDR_paratyphi', 'FQNS_typhi', 'FQNS_paratyphi', 'ceph_typhi', 'ceph_paratyphi')){
   
-  mydata <- readRDS(paste0('Z:/AMR/Pathogens/typhi_paratyphi/model_prep/clean_data/', db, '.rds'))
+  mydata <- readRDS(paste0('model_prep/clean_data/', db, '.rds'))
   mydata <- data.table(mydata)
   mydata <- mydata[,.(source_id, super_region, region, country = iso3, location_name, adm1 = as.numeric(adm1), adm2 = as.numeric(adm2), year_id = mid_year, 
                       number_resistant, sample_size, val = round(percentage_resistant/100,3), QA)]
@@ -77,5 +77,5 @@ for(db in c('MDR_typhi', 'MDR_paratyphi', 'FQNS_typhi', 'FQNS_paratyphi')){
   #restrict to studies with sample_size >=5
   mydata <- mydata[mydata$sample_size >=5,]
   
-  write.csv(mydata, paste0('Z:/AMR/Pathogens/typhi_paratyphi/model_prep/clean_data/', db, '_clean.csv'), row.names = F)
+  write.csv(mydata, paste0('model_prep/clean_data/', db, '_clean.csv'), row.names = F)
 }
