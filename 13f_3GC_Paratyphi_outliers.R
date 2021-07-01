@@ -12,11 +12,17 @@ library(ggforce)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 #read in data
 setwd('C:/Users/Annie/Documents/GRAM/typhi_paratyphi')
-mydata <- fread('model_prep/clean_data/ceph_typhi_clean.csv')
+mydata <- fread('model_prep/clean_data/ceph_paratyphi_clean.csv')
+mydata$number_resistant <- round(mydata$number_resistant,0)
 
 #match to national level covariates
-covs <- read.csv('Covariates/cleaned_covs.csv')
-covs <- covs[names(covs) %in% c('location_id', 'year_id', "ddd_per_1000", "J01D", "cv_dtp3_coverage_prop", "cv_water_prop")]
+covs <- read.csv('covariates/cleaned_covs.csv')
+
+covs <- covs[names(covs) %in% c('location_id', 'year_id', 
+                                "cv_mean_temperature",
+                                "cv_sanitation_prop",
+                                'cv_maternal_educ_yrs_pc',
+                                "J01D")]
 
 #centre scale covs
 covs$year <- covs$year_id
@@ -29,8 +35,10 @@ response = cbind(successes = mydata$number_resistant,
                  failures = mydata$sample_size)
 
 model1 <- glmer(response ~ 1 + year +
-                  ddd_per_1000+J01D+cv_dtp3_coverage_prop+cv_water_prop+
-                  (1 |super_region / region / country), 
+               cv_mean_temperature+
+               cv_sanitation_prop+
+               cv_maternal_educ_yrs_pc+
+               (1 |super_region / region / country), 
                 data = mydata, 
                 family = 'binomial',
                 control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
@@ -50,19 +58,13 @@ colnames(covs)[colnames(covs) == 'region_id'] <- 'region'
 colnames(covs)[colnames(covs) == 'spr_reg_id'] <- 'super_region'
 covs$region[covs$region == 5] <- 'East Asia '
 covs$region[covs$region == 9] <- 'Southeast Asia'
-covs$region[covs$region == 65] <- 'High-income Asia Pacific'
-covs$region[covs$region == 138] <- 'North Africa & Middle East'
 covs$region[covs$region == 159] <- 'South Asia'
-covs$region[covs$region == 167] <- 'Central Sub-Saharan Africa'
-covs$region[covs$region == 174] <- 'Eastern Sub-Saharan Africa'
-covs$region[covs$region == 192] <- 'Southern Sub-Saharan Africa'
-covs$region[covs$region == 199] <- 'Western Sub-Saharan Africa'
 
-covs$super_region[covs$super_region == 64] <- 'High Income'
-covs$super_region[covs$super_region == 137] <- 'North Africa & Middle East'
 covs$super_region[covs$super_region == 158] <- 'South Asia'
 covs$super_region[covs$super_region == 4] <- 'Southeast Asia, East Asia & Oceania'
-covs$super_region[covs$super_region == 166] <- 'Sub-Saharan Africa'
+
+covs <- covs[covs$super_region == 'South Asia'|
+               covs$super_region == 'Southeast Asia, East Asia & Oceania',]
 
 covs$QA <- 1
 covs$pred <- predict(model1, newdata = covs, type = 'response', allow.new.levels = TRUE)
@@ -72,6 +74,8 @@ covs <- merge(covs, mydata[,.(location_id, year_id, val, sample_size)], by = c('
 
 #determine the MAD
 covs <- data.table(covs)
+covs <- covs[!is.na(covs$super_region),]
+
 MADs <-  covs[,.(upper_bound = pred + 3*mad(pred[!is.na(val)], val[!is.na(val)]),
                  lower_bound = pred - 3*mad(pred[!is.na(val)],val[!is.na(val)])),
               by = c('country')]
@@ -80,8 +84,7 @@ covs <- cbind(covs, MADs[,2:3])
 covs$upper_bound[covs$upper_bound>1] <- 1
 covs$lower_bound[covs$lower_bound<0] <- 0
 
-covs <- covs[!is.na(covs$super_region),]
-pdf(paste0('model_prep/outliering/ceph_typhi/MAD3.pdf'),
+pdf(paste0('model_prep/outliering/ceph_paratyphi/MAD2.pdf'),
     height = 17,
     width = 12) 
 
@@ -111,12 +114,12 @@ df <- mydata[,.(val, year.rescaled, location_id.rescaled)]
 
 ##Natural Neighbor (NAN) algorithm to return the self-adaptive neighborhood
 K <- NAN(df, NaN_Edges=FALSE)$r
-K=18
+
 #calculate outlier scores for 14 algorithms
 outlier_score_COF <- COF(dataset=df, k=K)
 outlier_score_INFLO <- INFLO(dataset=df, k=K)
-outlier_score_KDEOS <- KDEOS(dataset=df, k_min=K, k_max=20)
-outlier_score_KNN_AGG <- KNN_AGG(dataset=df, k_min=K, k_max=20)
+outlier_score_KDEOS <- KDEOS(dataset=df, k_min=K, k_max=15)
+outlier_score_KNN_AGG <- KNN_AGG(dataset=df, k_min=K, k_max=15)
 outlier_score_KNN_IN <- KNN_IN(dataset=df, k=K)
 outlier_score_KNN_SUM <- KNN_SUM(dataset=df, k=K)
 outlier_score_LDF <- LDF(dataset=df, k=K, h=2, c=1)$LDF
@@ -153,11 +156,11 @@ mydata$dd_outlier <- ifelse(dd_outlier >=2,1,0)
 mydata$outliers <- 'None'
 mydata$outliers[mydata$dd_outlier==1] <- 'DD_outlier'
 mydata$outliers[mydata$MAD_outlier==1] <- 'MAD_outlier'
-mydata$outliers[mydata$dd_outlier==1 & mydata$is_outlier==1] <- 'Both'
+mydata$outliers[mydata$dd_outlier==1 & mydata$MAD_outlier==1] <- 'Both'
 
 mydata$outliers <- factor(mydata$outliers, levels = c('None', 'DD_outlier', 'MAD_outlier', 'Both'))
 
-pdf('model_prep/outliering/ceph_typhi/DD_over2.pdf',
+pdf('model_prep/outliering/ceph_paratyphi/DD_over2.pdf',
     height = 8.3, width = 11.7)
 #plot out a page for each region
 for(i in 1:length(unique(mydata$super_region))){
@@ -196,6 +199,6 @@ mydata <- mydata[,.(nid,
                     QA,
                     outliers)]
 
-write.csv(mydata , "model_prep/outliering/ceph_Typhi/inspect_outliers.csv", row.names = F)
+write.csv(mydata , "model_prep/outliering/ceph_paratyphi/inspect_outliers.csv", row.names = F)
 
 #Inspect the output file and determine which of the MAD and DD outliers should be outliered
