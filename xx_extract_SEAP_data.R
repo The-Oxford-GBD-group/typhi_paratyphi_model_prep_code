@@ -15,11 +15,18 @@ mydata$MDR[(mydata$ChloramphenicolSen == 'Resistant' | mydata$ChloramphenicolSen
 
 mydata$MDR[mydata$ChloramphenicolSen == "." | mydata$ChloramphenicolSen == 'Missing' | mydata$ChloramphenicolSen == 'Not performed'|
              mydata$AmpicillinSen == "." | mydata$AmpicillinSen == 'Missing' | mydata$AmpicillinSen == 'Not performed'|
-             mydata$AmpicillinSen == "." | mydata$AmpicillinSen == 'Missing' | mydata$AmpicillinSen == 'Not performed'] <- NA
+             mydata$CotrimoxazoleSen == "." | mydata$CotrimoxazoleSen == 'Missing' | mydata$CotrimoxazoleSen == 'Not performed'] <- NA
 
 mydata$fq <- NA
 mydata$fq[mydata$CiprofloxacinSen == 'Sensitive'] <- 0
 mydata$fq[mydata$CiprofloxacinSen == 'Resistant'|mydata$CiprofloxacinSen == 'Intermediate'] <- 1
+
+mydata$ceph <- 0
+mydata$ceph[mydata$CeftriaxoneSen == 'Resistant' | mydata$CeftriaxoneSen =='Intermediate' |
+              mydata$CefiximeSen== 'Resistant' | mydata$CefiximeSen =='Intermediate'] <- 1
+
+mydata$ceph[(mydata$CeftriaxoneSen == "." | mydata$CeftriaxoneSen == 'Missing' | mydata$CeftriaxoneSen == 'Not performed')&
+             (mydata$CefiximeSen == "." | mydata$CefiximeSen == 'Missing' | mydata$CefiximeSen == 'Not performed')] <- NA
 
 #remove missings
 mydata <- mydata[!is.na(mydata$year) & mydata$year != 3000,]
@@ -57,6 +64,17 @@ FQ_Typhi <- mydata[Species =='typhi',.(number_resistant = sum(fq, na.rm = T),
 FQ_Paratyphi <- mydata[Species =='paratyphi',.(number_resistant = sum(fq, na.rm = T),
                                                 sample_size = length(fq[!is.na(fq)])),
                         by = c('Country', 'location_name', 'location_id', 'adj_id','year')]
+
+
+ceph_Typhi <- mydata[Species =='typhi',.(number_resistant = sum(ceph, na.rm = T),
+                                       sample_size = length(ceph[!is.na(ceph)])),
+                   by = c('Country', 'location_name', 'location_id', 'adj_id','year')]
+
+ceph_Paratyphi <- mydata[Species =='paratyphi',.(number_resistant = sum(ceph, na.rm = T),
+                                               sample_size = length(ceph[!is.na(ceph)])),
+                       by = c('Country', 'location_name', 'location_id', 'adj_id','year')]
+
+
 
 MDR_Typhi <- MDR_Typhi[sample_size>=5 ,.(nid = 5151,
                                          super_region	= 'South Asia',
@@ -126,7 +144,43 @@ FQ_Paratyphi <- FQ_Paratyphi[sample_size>=5 ,.(nid = 5151,
                                                  variance = ((number_resistant/sample_size)*(1-(number_resistant/sample_size)))/sample_size, 
                                                  QA = 1)]
 
+ceph_Typhi <- ceph_Typhi[sample_size>=5 ,.(nid = 5151,
+                                       super_region	= 'South Asia',
+                                       region = 'South Asia',
+                                       country = Country, 
+                                       location_name,
+                                       location_id,
+                                       subnat_location_id = location_id,
+                                       adj_id, adj_id_sSA = NA, adj_id_Asia = adj_id,
+                                       year_id = year, 
+                                       age_group_id = 22,
+                                       sex_id = 3,
+                                       measure_id = 18,
+                                       number_resistant, sample_size, 
+                                       val = number_resistant/sample_size, 
+                                       variance = ((number_resistant/sample_size)*(1-(number_resistant/sample_size)))/sample_size, 
+                                       QA = 1)]
+
+ceph_Paratyphi <- ceph_Paratyphi[sample_size>=5 ,.(nid = 5151,
+                                               super_region	= 'South Asia',
+                                               region = 'South Asia',
+                                               country = Country, 
+                                               location_name,
+                                               location_id,
+                                               subnat_location_id = location_id,
+                                               adj_id, adj_id_sSA = NA, adj_id_Asia = adj_id,
+                                               year_id = year, 
+                                               age_group_id = 22,
+                                               sex_id = 3,
+                                               measure_id = 18,
+                                               number_resistant, sample_size, 
+                                               val = number_resistant/sample_size, 
+                                               variance = ((number_resistant/sample_size)*(1-(number_resistant/sample_size)))/sample_size, 
+                                               QA = 1)]
+
 write.csv(MDR_Typhi, 'Z:/AMR/Pathogens/typhi_paratyphi/Data extraction/datasets/SEAP/MDR_Typhi.csv', row.names = F)
 write.csv(MDR_Paratyphi, 'Z:/AMR/Pathogens/typhi_paratyphi/Data extraction/datasets/SEAP/MDR_Paratyphi.csv', row.names = F)
 write.csv(FQ_Typhi, 'Z:/AMR/Pathogens/typhi_paratyphi/Data extraction/datasets/SEAP/FQ_Typhi.csv', row.names = F)
 write.csv(FQ_Paratyphi, 'Z:/AMR/Pathogens/typhi_paratyphi/Data extraction/datasets/SEAP/FQ_Paratyphi.csv', row.names = F)
+write.csv(ceph_Typhi, 'Z:/AMR/Pathogens/typhi_paratyphi/Data extraction/datasets/SEAP/ceph_Typhi.csv', row.names = F)
+write.csv(ceph_Paratyphi, 'Z:/AMR/Pathogens/typhi_paratyphi/Data extraction/datasets/SEAP/ceph_Paratyphi.csv', row.names = F)
